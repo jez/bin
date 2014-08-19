@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# jif [[-n "$1" -o -n "$2" -o -n "$3"]]
+if [ $# -le 1 ]
+then
+  echo "usage: wget_offline <site-domain> <acclist> <initial-directory>"
+  exit
+fi
+
+wget \
+  --recursive \
+  --no-clobber \
+  --page-requisites \
+  --html-extension \
+  --convert-links \
+  --restrict-file-names=windows \
+  --domains $1 \
+  --no-parent \
+  --accept $2 \
+  $3

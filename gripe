@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Start grip and open web browser
+
+grip $@ 2>&1 > /dev/null & && open http://localhost:5000/
