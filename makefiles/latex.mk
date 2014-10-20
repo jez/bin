@@ -8,10 +8,10 @@ $(LATEXPDFS): %.pdf: %.tex
 	pdflatex -interaction nonstopmode $(patsubst %.pdf,%.tex,$@)
 
 clean:
-	rm *.aux *.log || true
+	rm -f $(TARGET).aux $(TARGET).log $(TARGET).snm $(TARGET).nav $(TARGET).toc $(TARGET).vrb $(TARGET).out || true
 
 veryclean: clean
-	rm $(TARGET).pdf
+	rm -f $(TARGET).pdf
 
 view: $(TARGET).pdf
 	if [ "Darwin" = "$(shell uname)" ]; then open $(TARGET).pdf ; else evince $(TARGET).pdf ; fi
