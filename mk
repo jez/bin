@@ -35,6 +35,7 @@ if [ "$ext" == "tex" ]; then
     sed -e "s/GPIMAKEMAKE/${file%.tex}/" > Makefile
     echo "gpi_makemake has installed a LaTeX Makefile for $file"
     echo "${sgreen}make${sreset}           - Compiles the LaTeX document into a PDF"
+    echo "${sgreen}make again${sreset}     - Touches all the files then remakes the PDF"
     echo "${sgreen}make clean${sreset}     - Removes aux and log files"
     echo "${sgreen}make veryclean${sreset} - Removes pdf, aux, and log files"
     echo "${sgreen}make view${sreset}      - Display the generated PDF file"

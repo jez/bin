@@ -7,8 +7,21 @@ LATEXPDFS=$(patsubst %.tex,%.pdf,$(wildcard *.tex))
 $(LATEXPDFS): %.pdf: %.tex
 	pdflatex -interaction nonstopmode $(patsubst %.pdf,%.tex,$@)
 
+touch:
+	touch *.tex
+
+again: touch all
+
 clean:
-	rm -f $(TARGET).aux $(TARGET).log $(TARGET).snm $(TARGET).nav $(TARGET).toc $(TARGET).vrb $(TARGET).out || true
+	rm -f \
+		$(TARGET).aux \
+		$(TARGET).log \
+		$(TARGET).nav \
+		$(TARGET).out \
+		$(TARGET).snm \
+		$(TARGET).toc \
+		$(TARGET).vrb \
+		|| true
 
 veryclean: clean
 	rm -f $(TARGET).pdf
@@ -22,4 +35,4 @@ submit: $(TARGET).pdf
 print: $(TARGET).pdf
 	lpr $(TARGET).pdf
 
-.PHONY: all clean veryclean view print
+.PHONY: all again touch clean veryclean view print
