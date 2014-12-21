@@ -6,7 +6,8 @@ managers, but for now they're here.
 
 Unless you read a blog post about a script in here, you can safely assume that
 the either the script has _no documentation_ or might even be broken. Take away
-from that what you will.
+from that what you will. That being said, I use the commands in here regularly,
+so it something looks interesting, ask.
 
 ## LICENSE
 
