@@ -4,6 +4,18 @@
 #
 # authors: Ian Vaughan
 #          Jacob Zimmerman
+#
+# usage:   uninstall_gems [<version> ...]
+#
+# examples:
+#   Uninstall all gems in all ruby version
+#       uninstall_gems
+#
+#   Uninstall all gems in ruby 2.1.3
+#       uninstall_gems 2.1.3
+#
+#   Uninstall all gems in the current ruby version
+#       uninstall_gems $(rbenv version-name)
 
 
 uninstall() {
@@ -24,9 +36,21 @@ else
   RUBIES=`ls $RBENVPATH/versions`
 fi
 
+# Don't clobber existing .ruby_version file
+if [ -f .ruby_version ]; then
+  RUBY_VERSION="$(cat .ruby_version)"
+fi
+
 for ruby in $RUBIES; do
   echo '---------------------------------------'
   echo $ruby
   rbenv local $ruby
   uninstall
 done
+
+# Restore old .ruby_version file if there was one
+if [ "$RUBY_VERSION" ]; then
+  echo "RUBY_VERSION" > .ruby_version
+else
+  rm .ruby_version
+fi
