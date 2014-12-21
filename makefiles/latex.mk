@@ -1,11 +1,10 @@
 TARGET=GPIMAKEMAKE
 
-all: $(TARGET).pdf
+all: $(patsubst %.tex,%.pdf,$(wildcard *.tex))
 
-## Generalized rule: how to build a .pdf from each .tex
-LATEXPDFS=$(patsubst %.tex,%.pdf,$(wildcard *.tex))
-$(LATEXPDFS): %.pdf: %.tex
-	pdflatex -interaction nonstopmode $(patsubst %.pdf,%.tex,$@)
+# Generalized rule: how to build a .pdf from each .tex
+%.pdf: %.tex
+	pdflatex -interaction nonstopmode $<
 
 touch:
 	touch *.tex
@@ -13,18 +12,10 @@ touch:
 again: touch all
 
 clean:
-	rm -f \
-		$(TARGET).aux \
-		$(TARGET).log \
-		$(TARGET).nav \
-		$(TARGET).out \
-		$(TARGET).snm \
-		$(TARGET).toc \
-		$(TARGET).vrb \
-		|| true
+	rm -f *.aux *.log *.nav *.out *.snm *.toc *.vrb || true
 
 veryclean: clean
-	rm -f $(TARGET).pdf
+	rm -f *.pdf
 
 view: $(TARGET).pdf
 	if [ "Darwin" = "$(shell uname)" ]; then open $(TARGET).pdf ; else evince $(TARGET).pdf ; fi
