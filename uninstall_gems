@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# Originally from https://gist.github.com/IanVaughan/2902499
+#
+# authors: Ian Vaughan
+#          Jacob Zimmerman
+
 
 uninstall() {
   list=`gem list --no-versions`
@@ -9,10 +15,15 @@ uninstall() {
   gem install bundler
 }
 
-#rbenv versions --bare
-RBENVPATH=`rbenv root`
-echo $RBENVPATH
-RUBIES=`ls $RBENVPATH/versions`
+if [ "$@" ]; then
+  RUBIES="$@"
+else
+  #rbenv versions --bare
+  RBENVPATH=`rbenv root`
+  echo $RBENVPATH
+  RUBIES=`ls $RBENVPATH/versions`
+fi
+
 for ruby in $RUBIES; do
   echo '---------------------------------------'
   echo $ruby
