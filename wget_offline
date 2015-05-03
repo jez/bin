@@ -14,4 +14,4 @@ wget \
   --convert-links \
   --restrict-file-names=windows \
   --no-parent \
-  "$1"
+  $*
