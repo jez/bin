@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+TARGET="$1"
+
+if [ -z "$TARGET" ]; then
+  echo "
+usage: $0 <package>
+"
+  exit 1
+fi
+
+for package in $(pip list | awk '{print $1;}'); do
+  # True if the pip information for this package contains the name of the TARGET
+  # package under the "Requires:" section
+  if [ -n "$(pip show $package | grep "^Requires:.*$TARGET")" ]; then
+    echo "$package"
+  fi
+done
