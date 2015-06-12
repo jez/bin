@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# Parse the output of `pip show` to determine which Python packages use a
+# specified package.
+#
+# Wish list:
+# - optionally list usage dependencies recursively
+# - operate on more than one argument
 
 TARGET="$1"
 
