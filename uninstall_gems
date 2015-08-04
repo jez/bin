@@ -36,9 +36,9 @@ else
   RUBIES=`ls $RBENVPATH/versions`
 fi
 
-# Don't clobber existing .ruby_version file
-if [ -f .ruby_version ]; then
-  RUBY_VERSION="$(cat .ruby_version)"
+# Don't clobber existing .ruby-version file
+if [ -f ./.ruby-version ]; then
+  RUBY_VERSION="$(cat ./.ruby-version)"
 fi
 
 for ruby in $RUBIES; do
@@ -48,9 +48,9 @@ for ruby in $RUBIES; do
   uninstall
 done
 
-# Restore old .ruby_version file if there was one
+# Restore old .ruby-version file if there was one
 if [ "$RUBY_VERSION" ]; then
-  echo "RUBY_VERSION" > .ruby_version
+  echo "$RUBY_VERSION" > ./.ruby-version
 else
-  rm .ruby_version
+  rm ./.ruby-version
 fi
