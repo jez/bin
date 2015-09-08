@@ -2,7 +2,7 @@
 
 # NOTE: all colors defined and exported in ~/.bash_profile
 
-supported_extensions='tex java c c0'
+supported_extensions='md tex java c c0'
 found=0
 for ext in $supported_extensions; do
   files=$(ls *.$ext 2> /dev/null | wc -l)
@@ -18,7 +18,31 @@ if [ "$found" == "0" ]; then
 fi
 
 
-if [ "$ext" == "tex" ]; then
+if [ "$ext" == "md" ]; then
+  echo -e "gpi_makemake is making you a Markdown Makefile!"
+  if [ $files -eq 1 ]; then
+    file=$(echo *.${ext})
+  else
+    echo -e "There is more than one Markdown file in your directory..."
+    echo -e "Choose one from the list to be the main source file."
+    select file in *.$ext; do break; done
+  fi
+
+  if [ -z $file ]; then
+    echo -e "Aborting..."
+  else
+    cat ~/bin/makefiles/md.mk |
+    sed -e "s/GPIMAKEMAKE/${file%.md}/" > Makefile
+    echo "gpi_makemake has installed a Markdown Makefile for $file"
+    echo "${sgreen}make${sreset}           - Compiles the Markdown document into a PDF"
+    echo "${sgreen}make again${sreset}     - Touches all the files then remakes the PDF"
+    echo "${sgreen}make clean${sreset}     - Removes aux and log files"
+    echo "${sgreen}make veryclean${sreset} - Removes pdf, aux, and log files"
+    echo "${sgreen}make view${sreset}      - Display the generated PDF file"
+    echo "${sgreen}make submit${sreset}    - Move the generated file into the parent directory"
+    echo "${sgreen}make print${sreset}     - Sends the PDF to print"
+  fi
+elif [ "$ext" == "tex" ]; then
   echo -e "gpi_makemake is making you a LaTeX Makefile!"
   if [ $files -eq 1 ]; then
     file=$(echo *.${ext})
