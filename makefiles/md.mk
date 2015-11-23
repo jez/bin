@@ -3,8 +3,8 @@ TARGET=GPIMAKEMAKE
 all: $(patsubst %.md,%.pdf,$(wildcard *.md))
 
 # Generalized rule: how to build a .pdf from each .md
-%.pdf: %.md
-	pandoc --template template.tex -f markdown -t latex -o $@ $<
+%.pdf: %.md template.tex
+	pandoc --template template.tex -f markdown+tex_math_single_backslash -t latex -o $@ $<
 
 touch:
 	touch *.md
