@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# From https://github.com/grassdog/dotfiles/blob/f58786f/bin/gtags
+# For use with a custom JavaScript langdef for ctags
+
+set -e
+
+# ctags doesn't handle negative look behinds so instead this script
+# strips false positives out of a tags file.
+
+ARGS="$@"
+FILE="tags"
+
+while [[ $# > 1 ]]; do
+  key="$1"
+
+  case $key in
+    -f)
+      FILE="$2"
+      shift
+      ;;
+  esac
+  shift
+done
+
+# Filter out false matches from class method regex
+CLASS_REGEX='/^(if|switch|function|module\.exports|it|describe)/d'
+# Filter out false matches from object definition regex
+OBJECT_REGEX='/var[ 	]+[a-zA-Z0-9_$]+[ 	]+=[ 	]+require\(/d'
+
+if [ "$FILE" = '-' ]; then
+  # sed streaming on stdout
+  ctags $ARGS | sed -E -e "$CLASS_REGEX" | sed -E -e "$OBJECT_REGEX"
+
+else
+  ctags $ARGS
+
+  # sed in place
+  sed -i '' -E -e "$CLASS_REGEX" "$FILE"
+  sed -i '' -E -e "$OBJECT_REGEX" "$FILE"
+fi
