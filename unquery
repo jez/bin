@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+"""
+Parse a url and spit out formatted json from its query.
+
+Shamelessly stolen from @jenanwise:
+    https://github.com/jenanwise/dotfiles/blob/47d2b56/homefiles/bin/unquery
+"""
+from __future__ import print_function
+
+import sys
+import urlparse
+import json
+
+
+def main(url):
+    query = urlparse.urlparse(url).query
+    data = urlparse.parse_qs(query)
+    munged = {}
+    for key, vals in data.iteritems():
+        munged[key] = {
+            0: None,
+            1: vals[0],
+        }.get(len(vals), vals)
+    json.dump(munged, fp=sys.stdout, indent=2, sort_keys=True)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print("Usage: {} <url>".format(sys.argv[0]), file=sys.stderr)
+        sys.exit(1)
+    main(sys.argv[1])
