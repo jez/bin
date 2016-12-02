@@ -4,7 +4,7 @@ all: $(patsubst %.md,%.pdf,$(wildcard *.md))
 
 # Generalized rule: how to build a .pdf from each .md
 %.pdf: %.md template.tex
-	pandoc --template template.tex -f markdown+tex_math_single_backslash -t latex -o $@ $<
+	pandoc --template template.tex -f markdown+tex_math_single_backslash -t latex --latex-engine=xelatex -o $@ $<
 
 # Generalized rule: how to build a .tex from each .md
 %.tex: %.md
