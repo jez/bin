@@ -1,2 +1,6 @@
 tags
 .*.sw[nop]
+
+# We want to have the cc0 compiler live here
+cc0.d
+
