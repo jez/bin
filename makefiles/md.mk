@@ -6,6 +6,10 @@ all: $(patsubst %.md,%.pdf,$(wildcard *.md))
 %.pdf: %.md template.tex
 	pandoc --template template.tex -f markdown+tex_math_single_backslash -t latex -o $@ $<
 
+# Generalized rule: how to build a .tex from each .md
+%.tex: %.md
+	pandoc --standalone --template template.tex -f markdown+tex_math_single_backslash -t latex -o $@ $<
+
 touch:
 	touch *.md
 
