@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+file="$1"
+booklet="$(basename "$file" .pdf)-booklet.pdf"
+
+if [ ! -f "$file" ]; then
+  echo "usage: booklet <file.pdf>"
+fi
+
+pdftops -expand "$file" - | psbook | pstopdf -i -o "$booklet"
