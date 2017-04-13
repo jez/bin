@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+PANDOC_STARTER="$HOME/programming/pandoc/pandoc-starter"
+
+project_type="$1"
+target="${2:-.}"
+
+indent4() {
+  sed -e 's/^/    /'
+}
+
+if [ -z "$project_type" ] || [ $# -gt 2 ]; then
+  echo "pproject: Initialize a pandoc project from a template in jez/pandoc-starter"
+  echo
+  echo "usage: pproject <project-type> [directory]"
+  echo "  where <project-type> is one of:"
+  find "$PANDOC_STARTER"/*/ -type dir -maxdepth 0 -name '*' -print0 | xargs -0 -L1 basename | indent4
+fi
+
+template_dir="$PANDOC_STARTER/$project_type/src"
+
+if [ -d "$template_dir" ]; then
+  cp -r "$template_dir" "$target"
+fi
