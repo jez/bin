@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# colors
+cnone="$(echo -ne '\033[0m')"
+cmagentab="$(echo -ne '\033[1;35m')"
+cyellow="$(echo -ne '\033[0;33m')"
+
+# BSD sed doesn't support \d, so fake it!
+d='[0-9]'
+
+date_pattern="$d$d$d$d-$d$d-$d$d $d$d:$d$d"
+title_pattern=".*"
+formatted="$cmagentab\1$cnone$cyellow\2$cnone"
+
+format() {
+  sed -e "s/^\($date_pattern\)\($title_pattern\)/$formatted/g"
+}
+
+if [ $# -eq 0 ]; then
+  jrnl -from today | format
+else
+  jrnl "$@" | format
+fi
