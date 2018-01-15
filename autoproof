@@ -31,4 +31,4 @@ echo "==> passive voice" | in_white
 passive "$@"
 
 echo "==> languagetool" | in_white
-languagetool --disable EN_QUOTES,WHITESPACE_RULE --enable PASSIVE_VOICE "$@"
+languagetool --disable EN_QUOTES,WHITESPACE_RULE,DASH_RULE --enable PASSIVE_VOICE "$@"
