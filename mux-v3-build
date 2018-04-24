@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+#
+# Sets up a new tab for Stripe.js v3 development.
+# In the new tab, there are three panes side-by-side.
+# From left to right, they're running:
+#
+# - an ngrok session to proxy my Stripe.js v3 build to the public internet
+# - a Vim session to edit local environment variables
+# - the webpack development server
+#
+
+if [ -z "$TMUX" ]; then
+  echo "This command only works within tmux."
+fi
+
+
+tmux new-window
+sleep 0.3
+tmux split-window -h
+sleep 0.3
+tmux split-window -h
+sleep 0.3
+
+tmux select-layout even-horizontal
+
+tmux set synchronize-panes
+tmux send-keys "cd ~/v3" Enter
+tmux send-keys "clear" Enter
+tmux set synchronize-panes
+
+tmux send-keys "yarn start" Enter
+
+tmux select-pane -L
+tmux send-keys "vim .env" Enter
+
+tmux select-pane -L
+tmux send-keys "ngrok start v3" Enter
+
+tmux select-pane -R
+
+
+# vim:ft=tmux

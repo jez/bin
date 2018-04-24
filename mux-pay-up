@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+#
+# Sets up a new tab for pay-server development.
+# In the new tab, there are two panes side-by-side.
+# In the left one, we run 'pay up'.
+# The other one is a shell session in the ~/ps directory.
+#
+
+if [ -z "$TMUX" ]; then
+  echo "This command only works within tmux."
+fi
+
+
+tmux new-window
+sleep 0.3
+tmux split-window -h
+sleep 0.3
+
+tmux set synchronize-panes
+tmux send-keys "cd ~/ps" Enter
+tmux send-keys "clear" Enter
+tmux set synchronize-panes
+
+tmux select-pane -L
+tmux send-keys "pay up" Enter
+
+tmux select-pane -R
+
+# vim:ft=tmux
