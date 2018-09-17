@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#
+# Given a text file like
+#
+#   foo.txt:3
+#   bar/qux.rb:17
+#
+# and a sed expression like `s/old/new/`, run the expression in place on all
+# the mentioned files + line combinations.
+#
+# Example:
+#
+#   multi-sed locs.txt 's/\*\([A-Za-z0-9_][A-Za-z0-9_]*\)/*T.unsafe(\1)/'
+#
+# (Replaces things like `*foo` with `*T.unsafe(foo)` only on mentioned lines.)
+#
+
+
+if [ $# -lt 2 ]; then
+  echo "usage: multi-sed <locs.txt> s/<find>/<replace>/ [sed options]"
+  echo '  where <locs.txt> has lines like file.ext:20'
+  exit 1
+fi
+
+locs_file="$1"
+shift
+substitution="$1"
+shift
+
+while read -r file_line; do
+  pair=(${file_line//:/ })
+
+  file=${pair[0]}
+  line=${pair[1]}
+
+  sed -i.bak "$@" "$line$substitution" "$file"
+  rm "$file.bak"
+done < "$locs_file"
