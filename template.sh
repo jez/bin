@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
+BINPATH="$(perl -MCwd -le 'print Cwd::abs_path(shift)' "${BASH_SOURCE[0]}")"
 # cd into folder where the script is located, or quit (defensive)
 # Works even if the executable is a symlink, and on macOS and Linux.
-BINPATH="$(perl -MCwd -le 'print Cwd::abs_path(shift)' "${BASH_SOURCE[0]}")"
-cd "$(dirname "$BINPATH")" || exit 1
+#cd "$(dirname "$BINPATH")" || exit 1
 
 # ----- logging & colors -------------------------------------------------- {{{
 
