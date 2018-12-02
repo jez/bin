@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -euo pipefail
+
+#
+# Given a text file like
+#
+#   foo.txt:3
+#   bar/qux.rb:17
+#
+# and a search pattern, search for the pattern in all the the mentioned files +
+# line combinations.
+#
+# Example:
+#
+#   multi-sed locs.txt 'initialize'
+#
+# (Search for the word initialize only on mentioned lines.)
+#
+
+
+if [ $# -lt 2 ]; then
+  echo "usage: multi-grep <locs.txt> <pattern> [grep options]"
+  echo '  where <locs.txt> has lines like file.ext:20'
+  exit 1
+fi
+
+locs_file="$1"
+shift
+pattern="$1"
+shift
+
+while read -r file_line; do
+  pair=(${file_line//:/ })
+
+  file=${pair[0]}
+  line=${pair[1]}
+
+
+  if [ -f "$file" ]; then
+    if sed "${line}q;d" "$file" | grep -q "$@" "$pattern"; then
+      echo "$file_line"
+    fi
+  fi
+done < "$locs_file"
