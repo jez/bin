@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# ----- logging & colors -------------------------------------------------- {{{
+
+red=$'\x1b[0;31m'
+green=$'\x1b[0;32m'
+yellow=$'\x1b[0;33m'
+cyan=$'\x1b[0;36m'
+cnone=$'\x1b[0m'
+
+if [ -t 1 ]; then
+  USE_COLOR=1
+else
+  USE_COLOR=0
+fi
+
+# Detects whether we can add colors or not
+in_color() {
+  local color="$1"
+  shift
+
+  if [ "$USE_COLOR" = "1" ]; then
+    echo "$color$*$cnone"
+  else
+    echo "$*"
+  fi
+}
+
+success() { echo "$(in_color "$green" "[ OK ]") $*"; }
+error() {   echo "$(in_color "$red"   "[ERR!]") $*"; }
+info() {    echo "$(in_color "$cyan"  "[INFO]") $*"; }
+# Color entire warning to get users' attention (because we won't stop).
+warn() { in_color "$yellow" "[WARN] $*"; }
+
+# }}}
+
+# ----- helper functions ------------------------------------------------------
+
+ensure_clean() {
+  local force_clean="$1"
+
+  if ! git diff --quiet; then
+    if [ -n "$force_clean" ]; then
+      warn "Overriding git dirty check!"
+      return
+    else
+      error "git diff showed uncommited changes. Aborting."
+      error "Pass --force-clean to ignore this check."
+      exit 1
+    fi
+  fi
+}
+
+ensure_gsed() {
+  if ! command -v gsed &> /dev/null; then
+    error "Missing required dependency: gsed"
+    exit 1
+  fi
+}
+
+populate_override_tmp() {
+  local folder="$1"
+  local override_tmp="$2"
+
+  info "Populating override tmpfile: $override_tmp"
+
+  echo 'strict:' > "$override_tmp"
+  git ls-files "$folder/**.rb" | sed -e $'s/\\(.*\\)/  - \'\\1\'/' >> "$override_tmp"
+}
+
+# list files which have changed since master
+git_files() {
+  git diff --name-only "$(git merge-base HEAD master)"
+}
+
+print_help() {
+  cat <<EOF
+
+suggest-runtime-profiled: Replayable script to suggest ::T::Utils::RuntimeProfiled
+
+Usage:
+  suggest-runtime-profiled [options] <folder>
+
+Arguments:
+  <folder>         Limit suggested types to only this folder.
+
+Options:
+  --force-clean    Ignore the check that the git repo isn't dirty.
+
+EOF
+}
+
+# ----- option parsing --------------------------------------------------------
+
+FORCE_CLEAN=
+FOLDER=
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --force-clean)
+      FORCE_CLEAN=1
+      shift
+      ;;
+    *)
+      if [ -z "$FOLDER" ]; then
+        FOLDER="$1"
+      else
+        error "Unrecognized positional arg: $1"
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$FOLDER" ]; then
+  error "Missing required argument: <folder>"
+  exit 1
+fi
+
+# ----- main ------------------------------------------------------------------
+
+main() {
+  ensure_clean "$FORCE_CLEAN"
+  ensure_gsed
+
+  info "Suggesting sigs in folder: $FOLDER"
+
+  local override_flag
+  if [ "$FOLDER" = "." ]; then
+    override_flag="--typed=strict"
+  else
+    local override_tmp
+    override_tmp="$(mktemp)"
+
+    populate_override_tmp "$FOLDER" "$override_tmp"
+
+    override_flag="--typed-override=$override_tmp"
+  fi
+
+  warn "If you see weird failures, double check that:"
+  warn "- you've updated the RUBY_TYPER file list."
+  warn "- you built sorbet with -c opt."
+
+  # ----- suggest runtime profiled -----
+
+  set -x
+  sorbet/scripts/typecheck_devel "$override_flag" --suggest-runtime-profiled --autocorrect || true
+  set +x
+
+  # ----- fixups -----
+
+  # For some reason we're still suggesting 'extend T::Helpers'
+  info "Removing T::Helpers"
+  git_files | xargs gsed -i -e '/extend T::Helpers/d'
+
+  success "Done!"
+  success "Check your git diff output for files changed."
+}
+
+main
+
+# vim:fdm=marker
