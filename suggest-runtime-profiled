@@ -70,9 +70,14 @@ populate_override_tmp() {
   git ls-files "$folder/**.rb" | sed -e $'s/\\(.*\\)/  - \'\\1\'/' >> "$override_tmp"
 }
 
-# list files which have changed since master
+# get merge base of master, which is where we'll make the PR against
+git_review_base() {
+  git merge-base HEAD master
+}
+
+# list files which have changed since review base
 git_files() {
-  git diff --name-only "$(git merge-base HEAD master)"
+  git diff --name-only "$(git_review_base)"
 }
 
 print_help() {
@@ -116,6 +121,7 @@ done
 
 if [ -z "$FOLDER" ]; then
   error "Missing required argument: <folder>"
+  usage
   exit 1
 fi
 
@@ -145,15 +151,27 @@ main() {
 
   # ----- suggest runtime profiled -----
 
+  info "Suggesting T::Utils::RuntimeProfiled..."
   set -x
   sorbet/scripts/typecheck_devel "$override_flag" --suggest-runtime-profiled --autocorrect || true
   set +x
 
+  git commit -a -m "Suggesting T::Utils::RuntimeProfiled..."
+
   # ----- fixups -----
 
+  # TODO(jez) Might want to make each step commit the result for reviewing.
+
   # For some reason we're still suggesting 'extend T::Helpers'
-  info "Removing T::Helpers"
-  git_files | xargs gsed -i -e '/extend T::Helpers/d'
+  # info "Removing T::Helpers..."
+  # git_files | xargs gsed -i -e '/extend T::Helpers/d'
+  # git commit -a -m "Removing T::Helpers..."
+
+  info "Reverting class << self..."
+  git grep -l 'class << self' | xargs git checkout "$(git_review_base)" --
+  if ! git commit -a -m "Reverting class << self..."; then
+    warn "└─ step didn't change any files."
+  fi
 
   success "Done!"
   success "Check your git diff output for files changed."
