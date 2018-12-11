@@ -71,13 +71,11 @@ populate_override_tmp() {
 }
 
 # get merge base of master, which is where we'll make the PR against
-git_review_base() {
-  git merge-base HEAD master
-}
+git_review_base="$(git merge-base HEAD master)"
 
 # list files which have changed since review base
 git_files() {
-  git diff --name-only "$(git_review_base)"
+  git diff --name-only "$git_review_base"
 }
 
 print_help() {
@@ -168,10 +166,28 @@ main() {
   # git commit -a -m "Removing T::Helpers..."
 
   info "Reverting class << self..."
-  git grep -l 'class << self' | xargs git checkout "$(git_review_base)" --
+  git grep -l 'class << self' | xargs git checkout "$git_review_base" --
   if ! git commit -a -m "Reverting class << self..."; then
     warn "└─ step didn't change any files."
   fi
+
+  info "Running rubocop..."
+  # shellcheck disable=SC2046
+  if ! rubocop --auto-correct $(git diff --name-only "$git_review_base"); then
+    info "Could not autocorrect all rubocop issues, rolling back offending files..."
+
+    set +o pipefail
+    # shellcheck disable=SC2046
+    rubocop --format files "$(git_files)" | xargs git checkout "$git_review_base" --
+    set -o pipefail
+  fi
+  if ! git commit -am "rubocop --auto-correct"; then
+    warn "└─ step didn't change any files."
+  fi
+
+  info "cherry-pick: Ignore generated sig output on service startup"
+  git cherry-pick 3b8572af112
+
 
   success "Done!"
   success "Check your git diff output for files changed."
