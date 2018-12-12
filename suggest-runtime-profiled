@@ -174,12 +174,12 @@ main() {
 
   # ----- fixups -----
 
-  # TODO(jez) Might want to make each step commit the result for reviewing.
-
   # For some reason we're still suggesting 'extend T::Helpers'
-  # info "Removing T::Helpers..."
-  # git_files | xargs gsed -i -e '/extend T::Helpers/d'
-  # git commit -a -m "Removing T::Helpers..."
+  info "Removing T::Helpers..."
+  git_files | xargs gsed -i -e '/extend T::Helpers/d'
+  if ! git commit -a -m "Removing T::Helpers..."; then
+    warn "└─ step didn't change any files."
+  fi
 
   info "Reverting class << self..."
   git grep -l 'class << self' | xargs git checkout "$git_review_base" --
