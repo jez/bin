@@ -60,6 +60,20 @@ ensure_gsed() {
   fi
 }
 
+ensure_multi_grep() {
+  if ! command -v multi-grep &> /dev/null; then
+    error "Missing required dependency: multi-grep"
+    exit 1
+  fi
+}
+
+ensure_multi_sed() {
+  if ! command -v multi-sed &> /dev/null; then
+    error "Missing required dependency: multi-sed"
+    exit 1
+  fi
+}
+
 populate_override_tmp() {
   local folder="$1"
   local override_tmp="$2"
@@ -128,6 +142,8 @@ fi
 main() {
   ensure_clean "$FORCE_CLEAN"
   ensure_gsed
+  ensure_multi_grep
+  ensure_multi_sed
 
   info "Suggesting sigs in folder: $FOLDER"
 
@@ -185,8 +201,46 @@ main() {
     warn "└─ step didn't change any files."
   fi
 
-  info "cherry-pick: Ignore generated sig output on service startup"
-  git cherry-pick 3b8572af112
+  # Fixup sigs on 'initialize' methods
+  info "Fixing initialize ..."
+  local included_tmp
+  included_tmp="$(mktemp)"
+  git grep -Hno 'def initialize' home | \
+    cut -d: -f1-2 | \
+    awk 'BEGIN { FS = ":" } { print $1 ":" ($2 - 1) }' | \
+    multi-grep 'sig .generated' > "$included_tmp"
+
+  multi-sed "$included_tmp" 's/returns.::T::Utils::RuntimeProfiled./void/'
+  if ! git commit -am "multi-sed initialize"; then
+    warn "└─ step didn't change any files."
+  fi
+
+  # Fixup sigs on 'self.included' methods
+  info "Fixing self.included ..."
+  local included_tmp
+  included_tmp="$(mktemp)"
+  git grep -Hno 'def self.included' home | \
+    cut -d: -f1-2 | \
+    awk 'BEGIN { FS = ":" } { print $1 ":" ($2 - 1) }' | \
+    multi-grep 'sig .generated' > "$included_tmp"
+
+  multi-sed "$included_tmp" 's/^\( *\).*/\1sig {generated.params(app: Class).void}/'
+  if ! git commit -am "multi-sed self.included"; then
+    warn "└─ step didn't change any files."
+  fi
+
+  local bad_sigs
+  bad_sigs="$(mktemp)"
+  info "Fix type sfrom starting every service."
+  info "bad_sigs tmpfile: $bad_sigs"
+  pay exec bundle exec ruby -e 'require "./lib/autoloader/preloader"; Opus::Autoloader::Preloader.run(["/pay/src/pay-server/admin/srv.rb", "/pay/src/pay-server/amp/srv.rb", "/pay/src/pay-server/api/srv.rb", "/pay/src/pay-server/bicci/srv.rb", "/pay/src/pay-server/cache/srv.rb", "/pay/src/pay-server/cibot/srv.rb", "/pay/src/pay-server/cibot_worker/srv.rb", "/pay/src/pay-server/devbox/srv.rb", "/pay/src/pay-server/es_reindex/srv.rb", "/pay/src/pay-server/excelsior/srv.rb", "/pay/src/pay-server/feportal/srv.rb", "/pay/src/pay-server/freighter/srv.rb", "/pay/src/pay-server/guildhall/srv.rb", "/pay/src/pay-server/heighliner/srv.rb", "/pay/src/pay-server/hint-evaluator/srv.rb", "/pay/src/pay-server/home/srv.rb", "/pay/src/pay-server/hydra/srv.rb", "/pay/src/pay-server/manage/srv.rb", "/pay/src/pay-server/marlin/srv.rb", "/pay/src/pay-server/panda_demo/srv.rb", "/pay/src/pay-server/saml_verifier/srv.rb", "/pay/src/pay-server/search_api/srv.rb", "/pay/src/pay-server/serenova_hooks/srv.rb", "/pay/src/pay-server/site/srv.rb", "/pay/src/pay-server/sources_adapter/srv.rb", "/pay/src/pay-server/status_site/srv.rb", "/pay/src/pay-server/support_export/srv.rb", "/pay/src/pay-server/support_site/srv.rb", "/pay/src/pay-server/template/srv.rb", "/pay/src/pay-server/upload/srv.rb", "/pay/src/pay-server/zendesk_hooks/srv.rb", "/pay/src/pay-server/devbox/dev_services/per_user_host_srv.rb"])' > "$bad_sigs" 2>&1
+  scripts/bin/remote-script sorbet/scripts/fix_types_from_splunk.rb < "$bad_sigs"
+  if ! git commit -am "Fix types from starting every service"; then
+    warn "└─ step didn't change any files."
+  fi
+
+  info "cherry-pick: Manual patches to get types to check"
+  git cherry-pick 269fdc4
 
 
   success "Done!"
