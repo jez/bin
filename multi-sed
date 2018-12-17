@@ -28,29 +28,22 @@ if [ $# -lt 2 ]; then
   exit 1
 fi
 
-locs_file="$1"
+LOCS_FILE="$1"
 shift
-substitution="$1"
+SUBSTITUTION="$1"
 shift
 
-process_line() {
-  local file_line="$1"
+if [ "$LOCS_FILE" = "-" ]; then
+  LOCS_FILE=/dev/stdin
+fi
+
+while read -r file_line; do
   # shellcheck disable=SC2206
   pair=(${file_line//:/ })
 
   file=${pair[0]}
   line=${pair[1]}
 
-  sed -i.bak "$@" "$line$substitution" "$file"
+  sed -i.bak "$@" "$line$SUBSTITUTION" "$file"
   rm "$file.bak"
-}
-
-if [ "$locs_file" = "-" ]; then
-  while read -r file_line; do
-    process_line "$file_line"
-  done
-else
-  while read -r file_line; do
-    process_line "$file_line"
-  done < "$locs_file"
-fi
+done < "$LOCS_FILE"
