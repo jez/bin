@@ -9,17 +9,22 @@
 # and a sed expression like `s/old/new/`, run the expression in place on all
 # the mentioned files + line combinations.
 #
-# Example:
+# Examples:
 #
 #   multi-sed locs.txt 's/\*\([A-Za-z0-9_][A-Za-z0-9_]*\)/*T.unsafe(\1)/'
 #
-# (Replaces things like `*foo` with `*T.unsafe(foo)` only on mentioned lines.)
+#   (Replaces things like `*foo` with `*T.unsafe(foo)` only on mentioned lines.)
+#
+#   multi-sed - 's/\*\([A-Za-z0-9_][A-Za-z0-9_]*\)/*T.unsafe(\1)/'
+#
+#   (Same as above, but reads locs from stdin)
 #
 
 
 if [ $# -lt 2 ]; then
   echo "usage: multi-sed <locs.txt> s/<find>/<replace>/ [sed options]"
   echo '  where <locs.txt> has lines like file.ext:20'
+  echo '  use - for <locs.txt> to read from stdin'
   exit 1
 fi
 
@@ -28,7 +33,9 @@ shift
 substitution="$1"
 shift
 
-while read -r file_line; do
+process_line() {
+  local file_line="$1"
+  # shellcheck disable=SC2206
   pair=(${file_line//:/ })
 
   file=${pair[0]}
@@ -36,4 +43,14 @@ while read -r file_line; do
 
   sed -i.bak "$@" "$line$substitution" "$file"
   rm "$file.bak"
-done < "$locs_file"
+}
+
+if [ "$locs_file" = "-" ]; then
+  while read -r file_line; do
+    process_line "$file_line"
+  done
+else
+  while read -r file_line; do
+    process_line "$file_line"
+  done < "$locs_file"
+fi
