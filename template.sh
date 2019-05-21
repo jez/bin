@@ -42,6 +42,19 @@ warn() { in_color "$yellow" "[ .. ] $*"; }
 
 # }}}
 
+# ----- debugging --------------------------------------------------------- {{{
+
+stop_in_repl() {
+  echo "Stopped in REPL. Press ^D to resume, or ^C to abort execution."
+  local line
+  while read -r -p "> " line; do
+    eval "$line"
+  done
+  echo
+}
+
+# }}}
+
 # ----- helper functions ------------------------------------------------------
 
 usage() {
