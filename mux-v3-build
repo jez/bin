@@ -12,6 +12,7 @@
 
 if [ -z "$TMUX" ]; then
   echo "This command only works within tmux."
+  exit 1
 fi
 
 
