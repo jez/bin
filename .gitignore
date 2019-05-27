@@ -8,4 +8,10 @@ jira
 jira-v0
 jira-v1
 
+sorbet
+sorbet-light
+
+clang-format
+clang-format.runfiles
+
 Applications
