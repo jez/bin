@@ -17,7 +17,7 @@ generate_commit_message() {
   echo ''
   echo 'New changes in this bump:'
   echo ''
-  git log --reverse --date=format-local:%Y-%m-%d --pretty="- (%h) %s%n  - %an, %cd" "$OLD_SHA_FULL..$NEW_SHA_FULL" | \
+  git log --reverse --pretty="- (%h) %s%n  - %an, %cr" "$OLD_SHA_FULL..$NEW_SHA_FULL" | \
     sed -e 's+(\([0-9a-f]*\))+([\1](https://github.com/sorbet/sorbet/commit/\1))+' | \
     sed -e 's+(\(#[0-9]*\))+([\1](https://github.com/sorbet/sorbet/pull/\1))+'
 }
