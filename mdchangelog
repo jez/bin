@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if [ $# -eq 1 ] && ! [ "$1" = "--help" ]; then
+  if [[ "$1" = *..* ]]; then
+    range="$1"
+  else
+    range="$1..HEAD"
+  fi
+else
+  echo "usage: mdchangelog [<from>[..<to>]]"
+  return 1
+fi
+
+git log --reverse --pretty="- (%h) %s%n  - %an, %cr" "$range" | \
+  sed -e "s+(\\([0-9a-f]*\\))+([\\1]($(hub browse -u)/commit/\\1))+" | \
+  sed -e "s+(#\\([0-9]*\\))+([\\1]($(hub browse -u)/pull/\\1))+"

@@ -37,8 +37,8 @@ success() { echo "$(in_color "$green" "[ OK ]") $*"; }
 error() { echo "$(in_color "$red" "[ERR!]") $*"; }
 info() { echo "$(in_color "$cyan" "[ .. ]") $*"; }
 fatal() { error "$@"; exit 1; }
-# Color entire warning to get users' attention (because we won't stop).
-warn() { in_color "$yellow" "[ .. ] $*"; }
+# Color entire message to get users' attention (because we won't stop).
+attn() { in_color "$yellow" "[ .. ] $*"; }
 
 # }}}
 

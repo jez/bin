@@ -14,4 +14,8 @@ sorbet-light
 clang-format
 clang-format.runfiles
 
+ambr
+ambs
+zap
+
 Applications
