@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+orig_onto="origin/master"
+# TODO(jez) Accept this as an option
+orig_head=$(git rev-parse HEAD)
+# TODO(jez) Accept this as an option
+orig_from="$(git merge-base "$orig_head" "$orig_onto")"
+
+# ----- logging & colors -------------------------------------------------- {{{
+
+red=$'\x1b[0;31m'
+green=$'\x1b[0;32m'
+yellow=$'\x1b[0;33m'
+cyan=$'\x1b[0;36m'
+cnone=$'\x1b[0m'
+
+USE_COLOR=
+if [ -t 1 ]; then
+  USE_COLOR=1
+fi
+
+# Detects whether we can add colors or not
+in_color() {
+  local color="$1"
+  shift
+
+  if [ -z "$USE_COLOR" ]; then
+    echo "$*"
+  else
+    echo "$color$*$cnone"
+  fi
+}
+
+success() { echo "$(in_color "$green" "[ OK ]") $*"; }
+error() { echo "$(in_color "$red" "[ERR!]") $*"; }
+info() { echo "$(in_color "$cyan" "[ .. ]") $*"; }
+fatal() { error "$@"; exit 1; }
+# Color entire message to get users' attention (because we won't stop).
+attn() { in_color "$yellow" "[ .. ] $*"; }
+
+# }}}
+
+if [ "$orig_from" = "$orig_head" ]; then
+  error "Nothing to rebase."
+  exit 1
+fi
+
+# Check if command output is non-empty
+if [ "$(git rev-list --merges "$orig_from..$orig_head" | head -c1 | wc -c)" != "0" ]; then
+  error "There are merge commits between here and the merge base."
+  error "Merge commits are not supported."
+  # TODO(jez) Show a git graph to help them diagnose.
+  exit 1
+fi
+
+# List commits from orig_from to orig_head, not including orig_from.
+commits=()
+while IFS= read -r line; do
+  commits+=( "$line" )
+done < <(git rev-list --reverse "$orig_from..$orig_head")
+
+# List branches that point directly to one of these commits, in order
+branches=()
+for commit in "${commits[@]}"; do
+  while IFS= read -r line; do
+    branches+=( "$line" )
+  done < <(git for-each-ref --points-at "$commit" --format="%(refname:short)" "refs/heads/*")
+done
+
+onto="$orig_onto"
+from="$orig_from"
+for branch in "${branches[@]}"; do
+  branch_sha=$(git rev-parse --short "$branch")
+
+  rebase_cmd=("git" "rebase" "--quiet" "--onto" "$onto" "$from" "$branch")
+  info "${rebase_cmd[*]}"
+  "${rebase_cmd[@]}"
+
+  onto="$branch"
+  from="$branch_sha"
+done
+
+success "All branches rebased."
+
+# TODO(jez) Accept an option to opt-in / opt-out of this
+for branch in "${branches[@]}"; do
+  push_cmd=("git" "push" "--force-with-lease" "--quiet" "origin" "$branch")
+  info "${push_cmd[*]}"
+  # "${push_cmd[@]}"
+done
+
+success "All rebased branches pushed."
+
+
+# vim:fdm=marker
