@@ -2,12 +2,6 @@
 
 set -euo pipefail
 
-orig_onto="origin/master"
-# TODO(jez) Accept this as an option
-orig_head=$(git rev-parse HEAD)
-# TODO(jez) Accept this as an option
-orig_from="$(git merge-base "$orig_head" "$orig_onto")"
-
 # ----- logging & colors -------------------------------------------------- {{{
 
 red=$'\x1b[0;31m'
@@ -41,6 +35,12 @@ fatal() { error "$@"; exit 1; }
 attn() { in_color "$yellow" "[ .. ] $*"; }
 
 # }}}
+
+orig_onto="origin/master"
+# TODO(jez) Accept this as an option
+orig_head=$(git rev-parse HEAD)
+# TODO(jez) Accept this as an option
+orig_from="$(git merge-base "$orig_head" "$orig_onto")"
 
 if [ "$orig_from" = "$orig_head" ]; then
   error "Nothing to rebase."
