@@ -13,6 +13,7 @@ sorbet-light
 
 clang-format
 clang-format.runfiles
+buildifier
 
 ambr
 ambs
