@@ -36,11 +36,99 @@ attn() { in_color "$yellow" "[ .. ] $*"; }
 
 # }}}
 
-orig_onto="origin/master"
-# TODO(jez) Accept this as an option
-orig_head=$(git rev-parse HEAD)
-# TODO(jez) Accept this as an option
-orig_from="$(git merge-base "$orig_head" "$orig_onto")"
+# ----- helper functions ------------------------------------------------------
+
+usage() {
+  cat <<EOF
+
+git-rebase-stack: TODO Name and description
+
+Usage:
+  git-rebase-stack [options] TODO incantations
+
+Arguments:
+  TODO Required (positional) arguments
+
+Options:
+  TODO optional flags
+
+EOF
+}
+
+expect_two_args() {
+  if [ "$2" = "" ]; then
+    error "Missing argument to $1"
+    usage
+    exit 1
+  fi
+}
+
+expect_empty() {
+  if [ "$1" != "" ]; then
+    error "$2"
+    usage
+    exit 1
+  fi
+}
+
+# ----- option parsing --------------------------------------------------------
+
+orig_onto=
+orig_head=
+orig_from=
+do_push=
+# do_land=
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --onto)
+      expect_two_args "$1" "${2:-}"
+      # expect_empty "$do_land" "Can only land onto master"
+      orig_onto="$2"
+      shift 2
+      ;;
+    -h|--head)
+      expect_two_args "$1" "${2:-}"
+      orig_head="$2"
+      shift 2
+      ;;
+    -f|--from)
+      expect_two_args "$1" "${2:-}"
+      expect_empty "$orig_from" "--land <branch> already implies --from <branch>"
+      orig_from="$2"
+      shift 2
+      ;;
+    # --land)
+    #   expect_two_args "$1" "${2:-}"
+    #   expect_empty "$orig_from" "--land <branch> already implies --from <branch>"
+    #   expect_empty "$do_push" "--land <branch> already implies --push"
+    #   expect_empty "$orig_onto" "Can only land onto master"
+    #   orig_from="$2"
+    #   do_push="1"
+    #   do_land="1"
+    #   shift 2
+    #   ;;
+    -p|--push)
+      do_push="1"
+      shift
+      ;;
+    *)
+      error "Unrecognized argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [ "$orig_onto" = "" ]; then
+  orig_onto="origin/master"
+fi
+if [ "$orig_head" = "" ]; then
+  orig_head=$(git rev-parse HEAD)
+fi
+if [ "$orig_from" = "" ]; then
+  orig_from="$(git merge-base "$orig_head" "$orig_onto")"
+fi
 
 if [ "$orig_from" = "$orig_head" ]; then
   error "Nothing to rebase."
@@ -54,6 +142,8 @@ if [ "$(git rev-list --merges "$orig_from..$orig_head" | head -c1 | wc -c)" != "
   # TODO(jez) Show a git graph to help them diagnose.
   exit 1
 fi
+
+# ----- main ------------------------------------------------------------------
 
 # List commits from orig_from to orig_head, not including orig_from.
 commits=()
@@ -84,14 +174,44 @@ done
 
 success "All branches rebased."
 
-# TODO(jez) Accept an option to opt-in / opt-out of this
-for branch in "${branches[@]}"; do
-  push_cmd=("git" "push" "--force-with-lease" "--quiet" "origin" "$branch")
-  info "${push_cmd[*]}"
-  # "${push_cmd[@]}"
-done
+if [ "$do_push" != "" ]; then
+  for branch in "${branches[@]}"; do
+    push_cmd=("git" "push" "--force-with-lease" "--quiet" "origin" "$branch")
+    info "${push_cmd[*]}"
+    "${push_cmd[@]}"
+  done
 
-success "All rebased branches pushed."
+  success "All rebased branches pushed."
 
+  # TODO(jez) This is all wrong; they shouldn't all be based on master but instead the previous one.
+  # if [ "$do_land" != "" ]; then
+  #   for branch in "${branches[@]}"; do
+  #     # TODO(jez) This doesn't check for `hub` / `ghi` being available
+  #     info "Getting PR number for branch $branch"
+
+  #     if [ "$(hub pr list -h "$branch" | head -c1 | wc -c)" = "0" ]; then
+  #       warn "No PR open for $branch"
+  #       continue
+  #     fi
+
+  #     pr_url="$(hub pr show -u -h "$branch")"
+  #     pr_number="${pr_url##*/}"
+
+  #     ghi_edit_cmd=("ghi" "edit" "$pr_number" "-H" "$branch" "--base" "master")
+  #     info "${ghi_edit_cmd[*]}"
+  #     "${ghi_edit_cmd[@]}"
+  #   done
+
+  #   success "Updated all PR branches"
+  # fi
+fi
+
+# TODO(jez) `git-land` == `git-rebase-stack --from`
+# Might also want to delete the landed branch locally and remotely
+#
+# ^ Deleting a branch will close stacked PRs, so probably want something that
+#   edits the landed branch's PR base
+#   url=$(git pr show -u); pr_number=${url##*/}; echo "$pr_number"; ghi edit "$pr_number" --base master
+#   curl --netrc -XPATCH "https://api.github.com/repos/sorbet/sorbet/pulls/$pr_number" -H "Content-Type: application/json" -d '{"base": "master"}'
 
 # vim:fdm=marker
