@@ -24,17 +24,13 @@ PAGER=
 # path/to/file2
 # <-= newline
 
-echo "### START Rebasing branch $BRANCH"
-echo "###"
 git log --reverse --pretty=format:'* %h   %s' --abbrev-commit --stat --name-only master.. | perl -lne'
     if ( m!^\*! ) {
         s!^\*!pick    !     # by default, show "pick"
     } else {
-        s!^!#  !            # just comment-out anything else, with leading spaces for filenames
+        s!^(.)!#  \1!       # just comment-out anything else, with leading spaces for filenames
     }
     s!\s*$!!;               # kill any trailing spaces
     print
 '
-echo "###"
-echo "### END Rebasing branch $BRANCH"
-echo "###"
+echo
