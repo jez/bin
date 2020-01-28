@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Usage:
+# Once you started git rebase --interactive master, and you are presented
+# with the list of commit SHAs and commit messages, from Vim:
+# - visually select all SHAs via "V}k"
+# - launch git-rr: !git-rr
+# - ...
+# - profit! you now have the same info as before, just with the list of
+#   filenames which changed with each commit, and can now move around
+#   commits knowing which files were touched by which commit
+
+# Get current branch, without initial "heads/"
+BRANCH=$(git describe --all | perl -lne's!^heads/!!;print')
+
+# Kill the "git log" paging features
+PAGER=
+
+# Lines look like:
+# * c0ffee00 commit message1
+# path/to/file1
+# <-= newline
+# * 00c0ffee commit message2
+# path/to/file2
+# <-= newline
+
+echo "### START Rebasing branch $BRANCH"
+echo "###"
+git log --reverse --pretty=format:'* %h   %s' --abbrev-commit --stat --name-only master.. | perl -lne'
+    if ( m!^\*! ) {
+        s!^\*!pick    !     # by default, show "pick"
+    } else {
+        s!^!#  !            # just comment-out anything else, with leading spaces for filenames
+    }
+    s!\s*$!!;               # kill any trailing spaces
+    print
+'
+echo "###"
+echo "### END Rebasing branch $BRANCH"
+echo "###"
