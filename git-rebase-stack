@@ -209,6 +209,8 @@ fi
 # TODO(jez) `git-land` == `git-rebase-stack --from`
 # Might also want to delete the landed branch locally and remotely
 #
+# hub api -X POST /api/v3/repos/stripe-internal/pay-server/issues/209764/comments -F body=mergebot-submit
+#
 # ^ Deleting a branch will close stacked PRs, so probably want something that
 #   edits the landed branch's PR base
 #   url=$(git pr show -u); pr_number=${url##*/}; echo "$pr_number"; ghi edit "$pr_number" --base master
