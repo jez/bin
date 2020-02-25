@@ -156,6 +156,7 @@ branches=()
 for commit in "${commits[@]}"; do
   while IFS= read -r line; do
     branches+=( "$line" )
+    # TODO(jez) This could be slow, especially without http://go/gitfetch
   done < <(git for-each-ref --points-at "$commit" --format="%(refname:short)" "refs/heads/*")
 done
 
