@@ -63,27 +63,17 @@ expect_two_args() {
   fi
 }
 
-expect_empty() {
-  if [ "$1" != "" ]; then
-    error "$2"
-    usage
-    exit 1
-  fi
-}
-
 # ----- option parsing --------------------------------------------------------
 
 orig_onto=
 orig_head=
 orig_from=
 do_push=
-# do_land=
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --onto)
       expect_two_args "$1" "${2:-}"
-      # expect_empty "$do_land" "Can only land onto master"
       orig_onto="$2"
       shift 2
       ;;
@@ -94,20 +84,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--from)
       expect_two_args "$1" "${2:-}"
-      expect_empty "$orig_from" "--land <branch> already implies --from <branch>"
       orig_from="$2"
       shift 2
       ;;
-    # --land)
-    #   expect_two_args "$1" "${2:-}"
-    #   expect_empty "$orig_from" "--land <branch> already implies --from <branch>"
-    #   expect_empty "$do_push" "--land <branch> already implies --push"
-    #   expect_empty "$orig_onto" "Can only land onto master"
-    #   orig_from="$2"
-    #   do_push="1"
-    #   do_land="1"
-    #   shift 2
-    #   ;;
     -p|--push)
       do_push="1"
       shift
@@ -120,15 +99,90 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# ----- defaulting ------------------------------------------------------------
+
 if [ "$orig_onto" = "" ]; then
   orig_onto="origin/master"
 fi
+
+echo 'here 1'
+
 if [ "$orig_head" = "" ]; then
-  orig_head=$(git rev-parse HEAD)
+  if git merge-base --is-ancestor HEAD "$orig_onto"; then
+    error "You are on a commit that is already merged into origin/master."
+    info  "Check out any commit on the stack you want to rebase."
+    exit 1
+  fi
+echo 'here 2'
+
+  independent_branches=()
+  while IFS= read -r line; do
+    # Will show two branch names if two branches are at the same commit
+    independent_branches+=( "$(git for-each-ref --points-at "$line" --format="%(refname:short)" "refs/heads/*")" )
+  done < <(git show-branch --independent)
+echo 'here 3'
+
+  if [ "${#independent_branches[@]}" -eq 0 ]; then
+    fatal "Did not find any branches"
+  fi
+echo 'here 4'
+
+for branch in "${independent_branches[@]}"; do
+echo "- $branch"
+done
+
+echo 'after 4'
+
+  potential_heads=()
+  for branch in "${independent_branches[@]}"; do
+    if git merge-base --is-ancestor HEAD "$branch"; then
+      potential_heads+=( "$branch" )
+    fi
+  done
+echo 'here 5'
+
+  if [ "${#potential_heads[@]}" -eq 0 ]; then
+    fatal "No branches contain HEAD. Is it orphaned?"
+  fi
+
+  if [ "${#potential_heads[@]}" -gt 1 ]; then
+    error "Multiple stack heads can reach the current commit:"
+    for potential_head in "${potential_heads[@]}"; do
+      info "- $potential_head"
+    done
+    info  "This script doesn't yet support this scenario"
+    info  "Please share with @jez the output of this command:"
+    info $'    git log --graph --oneline --decorate --branches="*$USER*" --remotes="*$USER*" master origin/master'
+    info $'(replacing $USER with whatever you prefix your branches with, if not your username)'
+    info
+    info  "In the mean time, please provide a branch to re-stack manually, with --head <branch>"
+    exit 1
+  fi
+
+  orig_head=${potential_heads[0]}
 fi
-if [ "$orig_from" = "" ]; then
-  orig_from="$(git merge-base "$orig_head" "$orig_onto")"
+
+info "Rebasing stack starting from $orig_head onto $orig_onto"
+
+# ----- main ------------------------------------------------------------------
+
+merge_base="$(git merge-base "$orig_head" "$orig_onto")"
+
+echo "$merge_base"
+
+if git merge-base --is-ancestor "$orig_head" "$orig_onto"; then
+  error "You are on a commit that is already merged into origin/master."
+  info  "Check out any commit on the stack you want to rebase."
+  exit 1
 fi
+
+exit 0
+
+# TODO(jez) Completely remove orig_from, replace with first branch above merge_base
+# (error if there is only one branch, because that's orig_head)
+# if [ "$orig_from" = "" ]; then
+#   orig_from="$(git merge-base "$orig_head" "$orig_onto")"
+# fi
 
 if [ "$orig_from" = "$orig_head" ]; then
   error "Nothing to rebase."
@@ -137,19 +191,20 @@ fi
 
 # Check if command output is non-empty
 if [ "$(git rev-list --merges "$orig_from..$orig_head" | head -c1 | wc -c)" != "0" ]; then
-  error "There are merge commits between here and the merge base."
+  error "There are merge commits between $orig_from and $orig_head."
   error "Merge commits are not supported."
-  # TODO(jez) Show a git graph to help them diagnose.
   exit 1
 fi
 
-# ----- main ------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # List commits from orig_from to orig_head, not including orig_from.
 commits=()
 while IFS= read -r line; do
   commits+=( "$line" )
 done < <(git rev-list --reverse "$orig_from..$orig_head")
+
+echo "${commits[@]}"
 
 # List branches that point directly to one of these commits, in order
 branches=()
@@ -159,6 +214,7 @@ for commit in "${commits[@]}"; do
     # TODO(jez) This could be slow, especially without http://go/gitfetch
   done < <(git for-each-ref --points-at "$commit" --format="%(refname:short)" "refs/heads/*")
 done
+echo "${branches[@]}"
 
 onto="$orig_onto"
 from="$orig_from"

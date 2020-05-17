@@ -27,12 +27,12 @@ in_color() {
   fi
 }
 
-success() { echo "$(in_color "$green" "[ OK ]") $*"; }
-error() { echo "$(in_color "$red" "[ERR!]") $*"; }
-info() { echo "$(in_color "$cyan" "[ .. ]") $*"; }
-fatal() { error "$@"; exit 1; }
+success() { echo "$(in_color "$green" "[ OK ]") $*" >&2; }
+error()   { echo "$(in_color "$red"   "[ERR!]") $*" >&2; }
+info()    { echo "$(in_color "$cyan"  "[ .. ]") $*" >&2; }
+fatal()   { error "$@"; exit 1; }
 # Color entire message to get users' attention (because we won't stop).
-attn() { in_color "$yellow" "[ .. ] $*"; }
+attn()    { in_color "$yellow" "[ .. ] $*" >&2; }
 
 # }}}
 
