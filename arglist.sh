@@ -6,8 +6,9 @@
 
 E_BADARGS=85
 
-if [ ! -n "$1" ]
+if [ "$#" = 0 ]
 then
+  echo "No args provided."
   echo "Usage: arglist.sh arg ..."
   exit $E_BADARGS
 fi
