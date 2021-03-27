@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+#
+# Sets up an existing tab for streaming.
+# Meant to be run from within tmux in the existing window that
+# should be set up for streaming.
+#
+# Meant to be set up with:
+#
+# - iTerm2: 8x zoom in
+# - Amethyst: 5x expand horizontally
+#
+
+# Right column
+tmux split-window -h
+sleep 0.3
+tmux resize-pane -x 35
+
+# Facecam
+tmux split-window -v
+sleep 0.3
+tmux resize-pane -y 10
+if [ "${1:-}" = "secondary" ]; then
+  tmux send-keys "facecam -R" Enter
+else
+  tmux send-keys "facecam" Enter
+fi
+
+# Twitch chat
+tmux select-pane -U
+
+tmux split-window -v
+sleep 0.3
+tmux resize-pane -y 8
+tmux send-keys "tc connect jez_io" Enter
+
+# To-do list
+tmux select-pane -U
+
+if [ "${1:-}" = "secondary" ]; then
+  tmux send-keys "todo -R" Enter "gg"
+else
+  tmux send-keys "todo" Enter "gg"
+fi
+
+# Back to main
+tmux select-pane -L
+
+
+
+
+# ---- old layout (not full screen mode) ---
+# tmux split-window -v
+# sleep 0.3
+# tmux resize-pane -y 10
+#
+# tmux select-pane -U
+#
+# tmux split-window -h
+# sleep 0.3
+# tmux resize-pane -x 35
+#
+# tmux split-window -v
+# sleep 0.3
+# tmux resize-pane -y 11
+# tmux send-keys "facecam" Enter
+#
+# tmux select-pane -U
+# tmux send-keys "todo" Enter "gg"
+#
+# tmux select-pane -L
+
+# vim:ft=tmux
