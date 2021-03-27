@@ -10,41 +10,59 @@
 # - iTerm2: 8x zoom in
 # - Amethyst: 5x expand horizontally
 #
+# Usage:
+#   stream-layout primary
+#     Set up primary tab (todo is writable)
+#   stream-layout
+#     Set up secondary tab (todo is readonly)
+#   stream-layout quit
+#     Close all open windows
+#
 
-# Right column
-tmux split-window -h
-sleep 0.3
-tmux resize-pane -x 35
+if [ "${1:-}" = "quit" ]; then
+  tmux set synchronize-panes on
 
-# Facecam
-tmux split-window -v
-sleep 0.3
-tmux resize-pane -y 10
-if [ "${1:-}" = "secondary" ]; then
-  tmux send-keys "facecam -R" Enter
+  tmux send-keys C-c C-d
+  sleep 0.1
+  tmux send-keys ":qall!" Enter
+  sleep 0.1
+  tmux send-keys C-d
 else
-  tmux send-keys "facecam" Enter
+  # Right column
+  tmux split-window -h
+  sleep 0.3
+  tmux resize-pane -x 35
+
+  # Facecam
+  tmux split-window -v
+  sleep 0.3
+  tmux resize-pane -y 10
+  if [ "${1:-}" = "primary" ]; then
+    tmux send-keys "facecam" Enter
+  else
+    tmux send-keys "facecam -R" Enter
+  fi
+
+  # Twitch chat
+  tmux select-pane -U
+
+  tmux split-window -v
+  sleep 0.3
+  tmux resize-pane -y 8
+  tmux send-keys "tc connect jez_io" Enter
+
+  # To-do list
+  tmux select-pane -U
+
+  if [ "${1:-}" = "primary" ]; then
+    tmux send-keys "todo" Enter "gg"
+  else
+    tmux send-keys "todo -R" Enter "gg"
+  fi
+
+  # Back to main
+  tmux select-pane -L
 fi
-
-# Twitch chat
-tmux select-pane -U
-
-tmux split-window -v
-sleep 0.3
-tmux resize-pane -y 8
-tmux send-keys "tc connect jez_io" Enter
-
-# To-do list
-tmux select-pane -U
-
-if [ "${1:-}" = "secondary" ]; then
-  tmux send-keys "todo -R" Enter "gg"
-else
-  tmux send-keys "todo" Enter "gg"
-fi
-
-# Back to main
-tmux select-pane -L
 
 
 
