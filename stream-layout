@@ -22,7 +22,9 @@
 if [ "${1:-}" = "quit" ]; then
   tmux set synchronize-panes on
 
-  tmux send-keys C-c C-d
+  tmux send-keys C-c
+  sleep 0.1
+  tmux send-keys C-d
   sleep 0.1
   tmux send-keys ":qall!" Enter
   sleep 0.1
@@ -48,8 +50,7 @@ else
 
   tmux split-window -v
   sleep 0.3
-  tmux resize-pane -y 8
-  tmux send-keys "tc connect jez_io" Enter
+  tmux send-keys "npx tc connect jez_io" Enter
 
   # To-do list
   tmux select-pane -U
