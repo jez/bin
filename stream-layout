@@ -30,7 +30,6 @@ if [ "${1:-}" = "quit" ]; then
   sleep 0.1
   tmux send-keys C-d
 
-  # The pane was probably all closed, but turn this off in case it wasn't
   tmux set synchronize-panes off
 else
   # Right column
@@ -54,6 +53,15 @@ else
   tmux split-window -v
   sleep 0.3
   tmux send-keys "npx tc connect jez_io" Enter
+
+  # Spotify
+  if command -v sp &> /dev/null; then
+    tmux select-pane -U
+
+    tmux split-window -v -l 2
+    sleep 0.3
+    tmux send-keys "current-song" Enter
+  fi
 
   # To-do list
   tmux select-pane -U
