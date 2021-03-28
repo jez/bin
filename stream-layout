@@ -29,6 +29,9 @@ if [ "${1:-}" = "quit" ]; then
   tmux send-keys ":qall!" Enter
   sleep 0.1
   tmux send-keys C-d
+
+  # The pane was probably all closed, but turn this off in case it wasn't
+  tmux set synchronize-panes off
 else
   # Right column
   tmux split-window -h
