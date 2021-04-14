@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+
+vimpay: Open file from pay test command
+
+Usage:
+  vimpay test <file> -l <line>
+
+Environment:
+  EDITOR      The Vim editor to launch. [default: vim]
+
+Intended usage is to type:
+  vim<Cmd-V>
+after copying a clicking "Copy command to clipboard" in a CIBot build result.
+
+EOF
+}
+
+if [ $# -ne 4 ]; then
+  usage
+  exit 1
+fi
+
+file="$2"
+if ! [ -e "$file" ]; then
+  usage
+  exit 1
+fi
+
+line="$4"
+if ! [[ "$line" =~ [0-9]* ]]; then
+  usage
+  exit 1
+fi
+
+# Explicitly going for wordsplitting, to allow for when EDITOR has flags in it.
+# shellcheck disable=SC2086
+exec ${EDITOR:-vim} "$file" "+$line"

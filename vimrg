@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Explicitly going for wordsplitting, to allow for when EDITOR has flags in it.
+# shellcheck disable=SC2086
+rg -n "$@" | ${EDITOR:-vim} -
