@@ -24,7 +24,7 @@ PAGER=
 # path/to/file2
 # <-= newline
 
-git log --reverse --pretty=format:'* %h   %s' --abbrev-commit --stat --name-only master.. | perl -lne'
+git log --reverse --pretty=format:'* %h   %s' --abbrev-commit --stat --name-only "${review_base:-master}".. | perl -lne'
     if ( m!^\*! ) {
         s!^\*!pick    !     # by default, show "pick"
     } else {
