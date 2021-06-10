@@ -41,10 +41,10 @@ attn()    { in_color "$yellow" "[ .. ] $*" >&2; }
 usage() {
   cat <<EOF
 
-git-pr-comment: Comment on a GitHub pull request using hub
+comment: Comment on a GitHub pull request using hub
 
 Usage:
-  git-pr-comment [options] <message>
+  comment [options] <message>
 
 Options:
 
