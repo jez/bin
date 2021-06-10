@@ -44,10 +44,13 @@ usage() {
 comment: Comment on a GitHub pull request using hub
 
 Usage:
-  comment [options] <message>
+  comment [options] [<message>]
+
+Arguments
+  <message>           Message to comment with. Must not be empty.
+                      [default: prompts for message using \$EDITOR]
 
 Options:
-
   -r, --repo          The org/repo identifier where the pull request lives.
                       [default: inferred from current repo using hub]
   -p, --pull-request  The pull request number to comment on. [default: inferred
@@ -106,7 +109,6 @@ if ! command -v jq > /dev/null; then
   fatal "This script requires jq"
 fi
 
-info "Checking hub credentials"
 # Make stdin /dev/null so that any interactive prompt for password fails immediately
 if ! hub api < /dev/null &> /dev/null; then
   error "hub does not have an auth token."
@@ -117,12 +119,6 @@ fi
 
 # ----- option defaulting -----------------------------------------------------
 
-if [ "$message" = "" ]; then
-  error "No comment message provided"
-  usage
-  exit 1
-fi
-
 if [ "$repo" = "" ]; then
   repo="{owner}/{repo}"
 fi
@@ -132,6 +128,33 @@ if [ "$pr_number" = "" ]; then
 fi
 
 # ----- main ------------------------------------------------------------------
+
+if [ "$message" = "" ]; then
+  if ! [ -t 0 ] || ! [ -t 1 ] || ! [ -t 2 ]; then
+    error "No comment message provided."
+    exit 1
+  fi
+
+  tmp_msg_dir="$(mktemp -d)"
+  comment_file="$tmp_msg_dir/COMMENT.md"
+  touch "$comment_file"
+
+  if ! $EDITOR "$comment_file"; then
+    error "Failed to collect message using editor '$EDITOR'."
+    exit 1
+  fi
+
+  message="$(< "$comment_file")"
+
+  if [ "$message" = "" ]; then
+    error "Aborting comment due to empty comment message."
+    usage
+    exit 1
+  fi
+fi
+
+echo "$message"
+exit
 
 api_res="$(mktemp)"
 # shellcheck disable=2064
