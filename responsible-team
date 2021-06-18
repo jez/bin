@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Walks up to containing metadata.yaml file and prints responsible_team.
+
+usage: $0 <path>
+EOF
+}
+
+if [ "$#" -ne 1 ]; then
+  usage
+  exit 1
+fi
+
+case "$1" in
+  -h|--help)
+    usage
+    exit
+    ;;
+  -*)
+    usage
+    exit 1
+    ;;
+esac
+
+path="$1"
+
+if ! [ -e "$1" ]; then
+  1>&2 echo "responsible-team: $1 does not exist"
+  exit 1
+fi
+
+# --- main --------------------------------------------------------------------
+
+if [ -d "$path" ]; then
+  current_dir="$path"
+else
+  current_dir="$(dirname "$1")"
+fi
+
+metadata_yaml=
+result=
+while true; do
+  metadata_yaml="$current_dir/metadata.yaml"
+  if [ -f "$metadata_yaml" ]; then
+    IFS=" " read -r -a search_result <<< "$(grep --max-count 1 '^responsible_team: \?\S\+' "$metadata_yaml")"
+    result="${search_result[1]}"
+    break
+  fi
+
+  if [ "$current_dir" = "." ]; then
+    break
+  else
+    current_dir="$(dirname "$current_dir")"
+  fi
+done
+
+if [ "$result" != "" ]; then
+  echo "$result"
+  echo "$metadata_yaml"
+elif [ "$metadata_yaml" = "" ]; then
+  1>&2 echo "responsible-team: Could not find metadata.yaml file"
+  exit 1
+else
+  1>&2 echo "responsible-team: No responsible_team in $metadata_yaml"
+  exit 1
+fi
