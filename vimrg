@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# Usage:
+#   Take any `rg` invocation and replace the `rg` with `vimrg`
+#   Should work with flags like -g and -t, etc.
+#   Assumes that the search pattern is last (shouldn't fail if that's not the
+#   case, but will set Vim's search register to the value of the last argument)
+#
+# Requires GNU printf
 
-# Explicitly going for wordsplitting, to allow for when EDITOR has flags in it.
-# shellcheck disable=SC2086
-rg -n "$@" | ${EDITOR:-vim} -
+${EDITOR:-vim} -c ":Grepper -query $(env printf ' %q' "$@")" -c ":let @/='${!#}'"
