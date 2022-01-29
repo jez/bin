@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+if [ -z "$TMUX" ]; then
+  echo "This command only works within tmux."
+  exit 1
+fi
+
+tmux new-window
+sleep 0.3
+
+tmux split-window -h -p 33
+sleep 0.3
+
+tmux split-window -v -p 67 -b
+sleep 0.3
+
+tmux split-window -v -p 50 -b
+sleep 0.3
+
+tmux set synchronize-panes
+tmux send-keys "cd ~/stripe/sorbet.run/docs/monaco/" Enter
+tmux send-keys "clear" Enter
+tmux set synchronize-panes
+
+tmux send-keys "cd ..; python3 server.py" Enter
+
+tmux select-pane -D
+tmux send-keys "npm run watch" Enter
+
+tmux select-pane -D
+tmux send-keys "webpack -w" Enter
+
+tmux select-pane -L
+
+
+# vim:ft=tmux
