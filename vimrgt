@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
-# Explicitly going for wordsplitting, to allow for when EDITOR has flags in it.
-# shellcheck disable=SC2086
-rg --glob='!test' -n ${EDITOR:-vim} "$@" | vim -
+# # Explicitly going for wordsplitting, to allow for when EDITOR has flags in it.
+# # shellcheck disable=SC2086
+# echo "rg --glob='!test' -n ${EDITOR:-vim} "$@" | vim -"
+# Usage:
+#   Take any `rg` invocation and replace the `rg` with `vimrg`
+#   Should work with flags like -g and -t, etc.
+#   Assumes that the search pattern is last (shouldn't fail if that's not the
+#   case, but will set Vim's search register to the value of the last argument)
+#
+# Requires GNU printf
+
+${EDITOR:-vim} -c ":Grepper -query --glob='!test' $(env printf ' %q' "$@")" -c ":let @/='${!#}'"
