@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if ! git branch -D "$@"; then
+  >&2 echo "git-bdo: failed to delete local branches"
+fi
+
+if ! git push "${remote:-origin}" "${@/#/:}"; then
+  >&2 echo "git-bdo: failed to delete remote branches"
+fi
