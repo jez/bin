@@ -8,7 +8,7 @@ if [ $# -eq 1 ] && ! [ "$1" = "--help" ]; then
   fi
 else
   echo "usage: mdchangelog [<from>[..<to>]]"
-  return 1
+  exit 1
 fi
 
 git log --reverse --pretty="- (%h) %s%n  - %an, %cr" "$range" | \
