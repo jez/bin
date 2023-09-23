@@ -1,4 +1,4 @@
-#!/usr/bin/env tail -n +3
+#!/usr/bin/env -S tail -n +3
 
 # Components                                   # Hexadecimal
 
