@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ -z "${TMUX:-}" ]; then
+  if tmux has-session -t blog &> /dev/null; then
+    >&2 echo "A tmux session for blog already exists."
+    exit 1
+  fi
+
+  tmux new -d -s blog
+  tmux send-keys -t blog "mux-write nested" Enter
+  tmux attach -t blog
+  exit
+elif [ "${1:-}" != nested ]; then
+  >&2 echo "Inside tmux, first argument must be nested, to confirm you know how this script works."
+  exit 1
+fi
+
+tmux new-window
+sleep 0.3
+
+tmux send-keys "cd ~/prog/io/jez/blog" Enter
+tmux send-keys "_bin/serve" Enter
+tmux select-window -t 1
+
+tmux send-keys "cd ~/prog/io/jez/blog" Enter
+
+for i in "" -{1..20}; do
+  slug="untitled$i"
+  filename="_drafts/$slug.md"
+  if [ ! -f "$filename" ]; then
+    break
+  fi
+done
+
+if [ -f "$filename" ]; then
+  >&2 echo "Over 20 drafts, aborting!"
+  exit 1
+fi
+
+tmux send-keys "bex octopress new draft $slug" Enter
+tmux send-keys "vim $filename" Enter
+tmux send-keys " wGo"
