@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$(uname)" = "Linux" ]; then
+  mux-write
+  exit
+fi
+
+hammerspoon() {
+  /Applications/Hammerspoon.app/Contents/Frameworks/hs/hs "$@"
+}
+
+jez_pc_01="100.102.11.111"
+
+python3 ~/bin/new_iterm2_window.py
+sleep 1
+hammerspoon "$HOME/bin/move_current_window_to_new_space.lua"
+
+osascript &>/dev/null <<EOF
+  tell application "iTerm"
+    activate
+    tell current session of current window to write text "ssh $jez_pc_01"
+    tell current session of current window to write text "mux-write"
+  end tell
+
+  tell application "Google Chrome"
+    activate
+    make new window
+    open location "http://$jez_pc_01:4000/#all-posts"
+  end tell
+EOF
+
+hammerspoon "$HOME/bin/move_current_window_to_last_space.lua"
+
+osascript &>/dev/null <<EOF
+  tell application "iTerm"
+    activate
+  end tell
+
+  tell application "System Events"
+    keystroke "l" using {shift down, option down}
+  end tell
+EOF
