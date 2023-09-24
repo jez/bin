@@ -41,4 +41,7 @@ fi
 
 tmux send-keys "bex octopress new draft $slug" Enter
 tmux send-keys "vim $filename" Enter
-tmux send-keys " wGo"
+# So we don't create a ton of untitled files.
+# If the user wants to save, they can :w
+tmux send-keys ":Remove" Enter
+tmux send-keys " wGa"
