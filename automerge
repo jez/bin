@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# ----- logging & colors -------------------------------------------------- {{{
+
+red=$'\x1b[0;31m'
+green=$'\x1b[0;32m'
+yellow=$'\x1b[0;33m'
+cyan=$'\x1b[0;36m'
+cnone=$'\x1b[0m'
+
+USE_COLOR=
+if [ -t 1 ]; then
+  USE_COLOR=1
+fi
+
+# Detects whether we can add colors or not
+in_color() {
+  local color="$1"
+  shift
+
+  if [ -z "$USE_COLOR" ]; then
+    echo "$*"
+  else
+    echo "$color$*$cnone"
+  fi
+}
+
+success() { echo "$(in_color "$green" "[ OK ]") $*" >&2; }
+error()   { echo "$(in_color "$red"   "[ERR!]") $*" >&2; }
+info()    { echo "$(in_color "$cyan"  "[ .. ]") $*" >&2; }
+fatal()   { error "$@"; exit 1; }
+# Color entire message to get users' attention (because we won't stop).
+attn()    { in_color "$yellow" "[ .. ] $*" >&2; }
+
+# }}}
+
+usage() {
+  cat <<EOF
+usage: automerge [-h|--help]
+
+Enable auto-merge for the current pull request, using \`hub\`.
+EOF
+}
+
+if [ "$#" -ge 1 ]; then
+  usage
+  case "${1:-}" in
+    -h|--help)
+      exit 0
+      ;;
+    *)
+      exit 1
+      ;;
+  esac
+fi
+
+if ! command -v hub &> /dev/null; then
+  error "This command require hub to be installed:"
+  info  "  https://github.com/github/hub"
+  exit 1
+fi
+
+info "Discovering current pull request..."
+
+# `hub api` fills in the {owner} and {repo} fields
+query_req="$(hub pr show --format 'query {
+  repository(owner: "{owner}", name: "{repo}") {
+    pullRequest(number: %I) {
+      id
+    }
+  }
+}')"
+
+query_res="$(hub api graphql -F query="$query_req")"
+
+pullRequestId="$(<<< "$query_res" jq --raw-output '.data.repository.pullRequest.id')"
+if [ "$pullRequestId" = "null" ]; then
+  <<< "$query_res" jq .
+  exit 1
+fi
+
+info "Setting auto-merge bit..."
+
+mutation_req="mutation MyMutation {
+  enablePullRequestAutoMerge(input: {
+    pullRequestId: \"$pullRequestId\",
+    mergeMethod: SQUASH
+  }) {
+      clientMutationId
+  }
+}"
+
+mutation_res="$(hub api graphql -F "query=$mutation_req")"
+if [ "$(<<< "$mutation_res" jq '.errors')" != "null" ]; then
+  <<< "$mutation_res" jq .
+  exit 1
+fi
+
+success "Auto-merge enabled: $(hub pr show -u)"
+
+# vim:fdm=marker
