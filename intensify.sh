@@ -56,7 +56,7 @@ done
 
 # Combine the frames into a GIF
 gif="${filename%.*}-intensifies.gif"
-convert -background none -dispose Background -delay 1x30 -loop 0 "${frame}"-*.gif "$gif"
+convert -background none -set dispose Background -delay 1x30 -loop 0 "${frame}"-*.gif "$gif"
 
 # Clean up
 rm "$extended" "${frame}"-*.gif
