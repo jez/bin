@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec awk '{s+=$1; n+=1; print} END {print s/n}'
