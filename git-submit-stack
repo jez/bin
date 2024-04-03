@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# ----- logging & colors -------------------------------------------------- {{{
+
+red=$'\x1b[0;31m'
+green=$'\x1b[0;32m'
+yellow=$'\x1b[0;33m'
+cyan=$'\x1b[0;36m'
+cnone=$'\x1b[0m'
+
+USE_COLOR=
+if [ -t 1 ]; then
+  USE_COLOR=1
+fi
+
+# Detects whether we can add colors or not
+in_color() {
+  local color="$1"
+  shift
+
+  if [ -z "$USE_COLOR" ]; then
+    echo "$*"
+  else
+    echo "$color$*$cnone"
+  fi
+}
+
+success() { echo "$(in_color "$green" "[ OK ]") $*"; }
+error() { echo "$(in_color "$red" "[ERR!]") $*"; }
+info() { echo "$(in_color "$cyan" "[ .. ]") $*"; }
+fatal() { error "$@"; exit 1; }
+# Color entire message to get users' attention (because we won't stop).
+attn() { in_color "$yellow" "[ .. ] $*"; }
+
+# }}}
+
+usage() {
+  cat <<EOF
+
+$0: Push all feature branches that are reachable from HEAD
+
+Usage:
+  $0 [options]
+
+Options:
+  -h, --help       Show this help message
+
+Note:
+  Feature branches must be named like $USER-*, or they will not be pushed.
+
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      usage
+      exit
+      ;;
+    *)
+      error "Unrecognized argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+# See git-for-each-refs(1) for format
+# See git-push(1) to confirm that origin is the default name
+branch_format='%(if)%(upstream)%(then)%(upstream:remotename)%(else)origin%(end) %(refname:lstrip=2)'
+
+push_output="$(mktemp)"
+trap 'rm -f "$push_output"' EXIT
+
+n=0
+while IFS=" " read -r -a cmd_args; do
+  cmd=(git push --force-with-lease "${cmd_args[@]}")
+  info "${cmd[*]}"
+  if ! "${cmd[@]}" --quiet 2>&1 | sed -e '/^remote:/d' > "$push_output" 2>&1 < /dev/null; then
+    cat "$push_output"
+    fatal "Push failed, aborting."
+  fi
+  n=$((n + 1))
+done < <(git branch --format "$branch_format" --merged HEAD "$USER-*" | tac)
+
+success "Pushed $n branches."
+
+# vim:fdm=marker
