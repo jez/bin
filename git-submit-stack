@@ -71,17 +71,11 @@ done
 # See git-push(1) to confirm that origin is the default name
 branch_format='%(if)%(upstream)%(then)%(upstream:remotename)%(else)origin%(end) %(refname:lstrip=2)'
 
-push_output="$(mktemp)"
-trap 'rm -f "$push_output"' EXIT
-
 n=0
 while IFS=" " read -r -a cmd_args; do
   cmd=(git push --force-with-lease "${cmd_args[@]}")
   info "${cmd[*]}"
-  if ! "${cmd[@]}" --quiet 2>&1 | sed -e '/^remote:/d' > "$push_output" 2>&1 < /dev/null; then
-    cat "$push_output"
-    fatal "Push failed, aborting."
-  fi
+  "${cmd[@]}" --quiet 2>&1 | sed -e '/^remote:/d'
   n=$((n + 1))
 done < <(git branch --format "$branch_format" --merged HEAD "$USER-*" | tac)
 
