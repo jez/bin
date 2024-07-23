@@ -8,13 +8,13 @@ fi
 tmux new-window
 sleep 0.3
 
-tmux split-window -h -p 33
+tmux split-window -h -l 33%
 sleep 0.3
 
-tmux split-window -v -p 67 -b
+tmux split-window -v -l 67% -b
 sleep 0.3
 
-tmux split-window -v -p 50 -b
+tmux split-window -v -l 50% -b
 sleep 0.3
 
 tmux set synchronize-panes
