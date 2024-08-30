@@ -20,11 +20,25 @@ fi
 tmux new-window
 sleep 0.3
 
-tmux send-keys "cd ~/prog/io/jez/blog" Enter
+# Must not have spaces!
+blog_dirs=(
+  "$HOME/prog/io/jez/blog"
+  "$HOME/stripe/github/blog"
+  "$HOME/blog"
+)
+
+for blog in "${blog_dirs[@]}"; do
+  if [ -d "$blog" ]; then
+    # blog will be in scope even after this loop finishes
+    break
+  fi
+done
+
+tmux send-keys "cd $blog" Enter
 tmux send-keys "_bin/serve" Enter
 tmux select-window -t 1
 
-tmux send-keys "cd ~/prog/io/jez/blog" Enter
+tmux send-keys "cd $blog" Enter
 
 for i in "" -{1..20}; do
   slug="untitled$i"
