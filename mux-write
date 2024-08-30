@@ -44,4 +44,4 @@ tmux send-keys "vim $filename" Enter
 # So we don't create a ton of untitled files.
 # If the user wants to save, they can :w
 tmux send-keys ":Remove" Enter
-tmux send-keys " wGa"
+tmux send-keys "u wGa"
