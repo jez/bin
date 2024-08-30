@@ -3,36 +3,52 @@
 set -euo pipefail
 
 if [ -z "${TMUX:-}" ]; then
-  if tmux has-session -t blog &> /dev/null; then
-    >&2 echo "A tmux session for blog already exists."
+  session=blog
+  if [ "${1:-}" != "" ]; then
+    session="${1:-}"
+    shift
+  fi
+
+  if tmux has-session -t "$session" &> /dev/null; then
+    >&2 echo "A tmux session for $session already exists."
     exit 1
   fi
 
-  tmux new -d -s blog
-  tmux send-keys -t blog "mux-write nested" Enter
-  tmux attach -t blog
+  tmux new -d -s "$session"
+  cmd="mux-write nested"
+  if [ "${1:-}" != "" ]; then
+    cmd="$cmd $1"
+  fi
+  tmux send-keys -t "$session" "$cmd" Enter
+  tmux attach -t "$session"
   exit
 elif [ "${1:-}" != nested ]; then
   >&2 echo "Inside tmux, first argument must be nested, to confirm you know how this script works."
   exit 1
+else
+  shift
 fi
 
 tmux new-window
 sleep 0.3
 
-# Must not have spaces!
-blog_dirs=(
-  "$HOME/prog/io/jez/blog"
-  "$HOME/stripe/github/blog"
-  "$HOME/blog"
-)
+if [ "${1:-}" != "" ]; then
+  blog="$1"
+else
+  # Must not have spaces!
+  blog_dirs=(
+    "$HOME/prog/io/jez/blog"
+    "$HOME/stripe/github/blog"
+    "$HOME/blog"
+  )
 
-for blog in "${blog_dirs[@]}"; do
-  if [ -d "$blog" ]; then
-    # blog will be in scope even after this loop finishes
-    break
-  fi
-done
+  for blog in "${blog_dirs[@]}"; do
+    if [ -d "$blog" ]; then
+      # blog will be in scope even after this loop finishes
+      break
+    fi
+  done
+fi
 
 tmux send-keys "cd $blog" Enter
 tmux send-keys "_bin/serve" Enter
