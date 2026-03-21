@@ -2,28 +2,37 @@
 
 set -euo pipefail
 
-if [ "$#" != "1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   >&2 echo "usage: $0 <box-name>"
   exit 1
 fi
 
-box_name="$1"
+if [ "$1" = "--skip-new" ]; then
+  shift
+  box_name="$1"
+else
+  box_name="$1"
+  pay remote new "$box_name" --repo stripe-internal/pay-server:master-passing-tests --no-open-code --no-notify-on-ready --skip-confirm --host_type=qa-mydev
+fi
 
-pay remote new "$box_name" --repo stripe-internal/pay-server:master-passing-tests --no-open-code --notify-on-ready --skip-confirm --host_type=qa-mydev
-pay remote copy "$box_name" "$HOME/.config/hub-mydev" remote:/home/jez/.config/hub
+# shellcheck disable=SC2016
+scp "$HOME/.config/hub-mydev" "$box_name":'~/.config/hub'
 
 # Otherwise we can't get to github.com
 ssh "$box_name" -- mkdir -p '"$HOME/.ssh"'
-pay remote copy "$box_name" "$HOME/.ssh/config-mydev" remote:/home/jez/.ssh/config
+# shellcheck disable=SC2016
+scp "$HOME/.ssh/config-mydev" "$box_name":'~/.ssh/config'
 
 # Now that we can get to github.com, clone dotfiles.
-ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/dotfiles.git '/home/jez/.dotfiles'
-ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/bin.git '/home/jez/bin'
-ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@git.corp.stripe.com:jez/livegrep-cli.git '/home/jez/livegrep-cli'
+ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/dotfiles.git '$HOME/.dotfiles'
+ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/bin.git '$HOME/bin'
+ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@git.corp.stripe.com:jez/livegrep-cli.git '$HOME/livegrep-cli'
 
-ssh "$box_name" -- 'cd "/home/jez/.dotfiles" && ./devbox-setup.sh'
+ssh "$box_name" -- 'cd "$HOME/.dotfiles" && ./devbox-setup.sh'
 
 ssh "$box_name" -- 'ln -v -s /pay/src/pay-server ps'
-ssh "$box_name" -- 'cd "/home/jez/bin" && ln -v -s "/home/jez/livegrep-cli/lg" .'
+ssh "$box_name" -- 'cd "$HOME/bin" && ln -v -s "$HOME/livegrep-cli/lg" .'
+
+osascript "-e" "display notification \"Your new remote devbox \`$box_name\` is ready for use\" with title \"Remote devbox ready\""
 
 # TODO(jez) Figure out where to put pay configure --no-pay-up-emoji
