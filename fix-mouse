@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+set -x
+
+xinput set-prop "pointer:Logitech Gaming Mouse G502" "libinput Accel Profile Enabled" 0, 0, 1
+xinput set-prop "pointer:Logitech Gaming Mouse G502" "libinput Accel Custom Motion Step" 3.5
+xinput set-prop "pointer:Logitech Gaming Mouse G502" "libinput Accel Custom Motion Points" 0, 5, 20, 43
