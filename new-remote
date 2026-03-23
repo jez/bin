@@ -18,7 +18,7 @@ fi
 pay box map-ssh
 
 # shellcheck disable=SC2016
-scp "$HOME/.config/hub-mydev" "$box_name":'~/.config/hub'
+rsync --perms --chmod 600 "$HOME/.config/hub-mydev" "$box_name":'~/.config/hub'
 
 # Otherwise we can't get to github.com
 ssh "$box_name" -- mkdir -p '"$HOME/.ssh"'
