@@ -12,7 +12,7 @@ if [ "$1" = "--skip-new" ]; then
   box_name="$1"
 else
   box_name="$1"
-  pay remote new "$box_name" --repo stripe-internal/pay-server:master-passing-tests --no-open-code --no-notify-on-ready --skip-confirm --host_type=qa-mydev
+  pay remote new "$box_name" --repo stripe-internal/mint:master --workspace pay-server --no-open-code --no-notify-on-ready --skip-confirm
 fi
 
 pay box map-ssh
