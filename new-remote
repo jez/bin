@@ -38,7 +38,6 @@ while [[ $# -gt 0 ]]; do
         >&2 usage
         exit 1
       fi
-      shift
       ;;
   esac
 done
@@ -70,7 +69,8 @@ ssh "$box_name" -- 'cd "$HOME/bin" && ln -v -s "$HOME/livegrep-cli/lg" .'
 osascript "-e" "display notification \"Your new remote devbox \`$box_name\` is ready for use\" with title \"Remote devbox ready\""
 
 if ! $skip_ssh; then
-  exec ssh "$box_name"
+  # -t == force tty allocation
+  exec ssh -t "$box_name" 'zsh --login --interactive -c mux'
 fi
 
 # TODO(jez) Figure out where to put pay configure --no-pay-up-emoji
