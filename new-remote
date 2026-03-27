@@ -55,7 +55,7 @@ fi
 pay box map-ssh
 
 if ! $skip_new; then
-  ssh "$box_name" -- "git checkout HEAD~0 && git branch -D '$box_name'"
+  ssh "$box_name" -- "cd /pay/src && git checkout HEAD~0 && git branch -D '$box_name'"
 fi
 
 # shellcheck disable=SC2016
