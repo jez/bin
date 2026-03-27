@@ -14,6 +14,7 @@ EOF
 
 skip_new=false
 skip_ssh=false
+workspace=pay-server
 
 box_name=
 while [[ $# -gt 0 ]]; do
@@ -24,6 +25,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-ssh)
       skip_ssh=true
+      shift
+      ;;
+    --workspace)
+      workspace=$2
+      shift
       shift
       ;;
     -h|--help)
@@ -43,10 +49,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if ! $skip_new; then
-  pay remote new "$box_name" --repo stripe-internal/mint:master --workspace pay-server --no-open-code --no-notify-on-ready --skip-confirm
+  pay remote new "$box_name" --repo stripe-internal/mint --workspace "$workspace" --no-open-code --no-notify-on-ready --skip-confirm
 fi
 
 pay box map-ssh
+
+if ! $skip_new; then
+  ssh "$box_name" -- "git checkout HEAD~0 && git branch -D '$box_name'"
+fi
 
 # shellcheck disable=SC2016
 rsync --perms --chmod 600 "$HOME/.config/hub-mydev" "$box_name":'~/.config/hub'
@@ -70,7 +80,7 @@ osascript "-e" "display notification \"Your new remote devbox \`$box_name\` is r
 
 if ! $skip_ssh; then
   # -t == force tty allocation
-  exec ssh -t "$box_name" 'zsh --login --interactive -c mux'
+  exec ssh -t "$box_name" "zsh --login --interactive -c 'cd /pay/src/$workspace && mux'"
 fi
 
 # TODO(jez) Figure out where to put pay configure --no-pay-up-emoji
