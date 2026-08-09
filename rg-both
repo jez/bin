@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+pattern1="$1"
+shift
+pattern2="$1"
+shift
+
+rg -l "$@" -- "$pattern1" | xargs rg -l "$pattern2"
