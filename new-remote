@@ -54,17 +54,27 @@ fi
 
 pay box map-ssh
 
-# shellcheck disable=SC2016
+# There is also the old ~/.config/hub-mydev-both
 rsync --perms --chmod 600 "$HOME/.config/hub-mydev" "$box_name":'~/.config/hub'
+
+# Copy the GitHub token without putting it in the dotfiles repository.
+ssh "$box_name" -- 'install -d -m 700 "$HOME/.local/state/secrets"'
+scp "$HOME/.local/state/secrets/github-token" "$box_name":'~/.local/state/secrets/github-token'
+ssh "$box_name" -- 'chmod 600 "$HOME/.local/state/secrets/github-token"'
 
 # Otherwise we can't get to github.com
 ssh "$box_name" -- mkdir -p '"$HOME/.ssh"'
-# shellcheck disable=SC2016
 scp "$HOME/.ssh/config-mydev" "$box_name":'~/.ssh/config'
+scp "$HOME/.ssh/devbox-id_ed25519.pub" "$box_name":'~/.ssh/id_ed25519.pub'
+scp "$HOME/.ssh/devbox-id_ed25519" "$box_name":'~/.ssh/id_ed25519'
 
-# Now that we can get to github.com, clone dotfiles.
-ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/dotfiles.git '$HOME/.dotfiles'
-ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@github.com:jez/bin.git '$HOME/bin'
+# Clone over HTTPS, so cloning doesn't need the SSH key's passphrase. The -c
+# rule also applies to submodules, whose .gitmodules URLs use SSH. Once
+# devbox-setup.sh links ~/.gitconfig, every GitHub repo (including ones cloned
+# later, like ~/sorbet) fetches over HTTPS and pushes over SSH with the key
+# above. See ~/.dotfiles/host-qa-mydev/gitconfig.
+ssh "$box_name" -- git -c url.https://github.com/.insteadOf=git@github.com: clone '--jobs="$(nproc)"' --recursive https://github.com/jez/dotfiles.git '$HOME/.dotfiles'
+ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive https://github.com/jez/bin.git '$HOME/bin'
 ssh "$box_name" -- git clone '--jobs="$(nproc)"' --recursive git@git.corp.stripe.com:jez/livegrep-cli.git '$HOME/livegrep-cli'
 
 ssh "$box_name" -- 'cd "$HOME/.dotfiles" && ./devbox-setup.sh'
@@ -72,11 +82,17 @@ ssh "$box_name" -- 'cd "$HOME/.dotfiles" && ./devbox-setup.sh'
 ssh "$box_name" -- 'ln -v -s /pay/src/pay-server ps'
 ssh "$box_name" -- 'cd "$HOME/bin" && ln -v -s "$HOME/livegrep-cli/lg" .'
 
+ssh "$box_name" -- 'sudo sysctl kernel.perf_event_paranoid=-1'
+ssh "$box_name" -- 'sudo sysctl kernel.kptr_restrict=0'
+ssh "$box_name" -- 'cd /pay/src && git config core.fsmonitor ""'
+
+# Clone ~/sorbet and do an initial build. This has to come after
+# devbox-setup.sh, so that the git@github.com: clone fetches over HTTPS.
+ssh "$box_name" -- /pay/src/pay-server/sorbet/scripts/devbox-clone.sh
+
 osascript "-e" "display notification \"Your new remote devbox \`$box_name\` is ready for use\" with title \"Remote devbox ready\""
 
 if ! $skip_ssh; then
   # -t == force tty allocation
   exec ssh -t "$box_name" "zsh --login --interactive -c 'cd /pay/src/$workspace && mux'"
 fi
-
-# TODO(jez) Figure out where to put pay configure --no-pay-up-emoji
